@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rayo Multas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Rayo Multas</h1>
+            <p>Manage your data efficiently</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <h2>Add New Record</h2>
+                <form id="dataForm">
+                    <input type="text" id="nameInput" placeholder="Enter name" required>
+                    <input type="text" id="descInput" placeholder="Enter description" required>
+                    <button type="submit">Add Record</button>
+                </form>
+            </section>
+
+            <section class="display-section">
+                <h2>Records</h2>
+                <div id="recordsList" class="records-list">
+                    <p>Loading records...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
