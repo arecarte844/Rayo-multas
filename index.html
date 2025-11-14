@@ -977,6 +977,16 @@
                 state.players.forEach((p) => {
                   if (!p.role) p.role = "player";
                 });
+                state.fines.forEach((f) => {
+                    if (typeof f.paidPortion !== "number") {
+                        // multas antiguas sin este campo
+                        f.paidPortion = f.status === "paid" ? f.amount : 0;
+    }
+  });
+} else {
+  state = cloneDefaultState();
+  pushStateToRemote();
+}
               } else {
                 state = cloneDefaultState();
                 pushStateToRemote();
@@ -1370,6 +1380,7 @@
           status: "pending",
           createdAt: new Date().toISOString(),
           paidAt: null,
+          paidPortion: 0 // Cantidad ya pagada 
         };
 
         state.fines.push(fineRecord);
