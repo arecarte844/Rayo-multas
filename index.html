@@ -215,7 +215,7 @@
       font-size: 0.9rem;
       font-family: inherit;
       outline: none;
-      transition: border 0.12s ease, box-shadow 0.12s ease, background 0.12s;
+      transition: border 0.12s.ease, box-shadow 0.12s ease, background 0.12s;
       background: #f9fafb;
     }
 
@@ -237,6 +237,7 @@
     input[type="number"] {
       -moz-appearance: textfield;
     }
+
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -835,6 +836,7 @@
         { name: "Irene", role: "player" },
         { name: "Ibañez", role: "player" },
         { name: "Lina", role: "player" },
+        { name: "Peke", role: "player" },
       ];
 
       const defaultState = {
@@ -1224,25 +1226,30 @@
           tdStatus.appendChild(badge);
 
           const tdAction = document.createElement("td");
-          if (remaining > 0) {
-            if (isCaptain) {
-              const btn = document.createElement("button");
-              btn.type = "button";
-              btn.className = "btn btn-small btn-primary";
-              btn.textContent = "Registrar pago";
-              btn.dataset.action = "register-payment";
-              btn.dataset.id = fine.id;
-              tdAction.appendChild(btn);
-            } else {
-              const span = document.createElement("span");
-              span.className = "badge badge-neutral";
-              span.textContent = "Solo capitana";
-              tdAction.appendChild(span);
+
+          if (isCaptain) {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "btn btn-small btn-secondary";
+            deleteBtn.textContent = "Eliminar";
+            deleteBtn.dataset.action = "delete-fine";
+            deleteBtn.dataset.id = fine.id;
+            tdAction.appendChild(deleteBtn);
+
+            if (remaining > 0) {
+              const payBtn = document.createElement("button");
+              payBtn.type = "button";
+              payBtn.className = "btn btn-small btn-primary";
+              payBtn.textContent = "Registrar pago";
+              payBtn.dataset.action = "register-payment";
+              payBtn.dataset.id = fine.id;
+              payBtn.style.marginLeft = "0.25rem";
+              tdAction.appendChild(payBtn);
             }
           } else {
             const span = document.createElement("span");
             span.className = "badge badge-neutral";
-            span.textContent = "OK";
+            span.textContent = "Solo capitana";
             tdAction.appendChild(span);
           }
 
@@ -1287,7 +1294,7 @@
         }
         if (modeExplainEl) {
           modeExplainEl.textContent = isCaptain
-            ? "Estás en modo capitana: puedes registrar multas nuevas y marcar pagos."
+            ? "Estás en modo capitana: puedes registrar multas nuevas, marcar pagos y eliminar multas."
             : "En modo lectura solo ves los datos, no puedes cambiarlos.";
         }
 
@@ -1419,50 +1426,66 @@
       });
 
       finesTableBodyEl.addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-action='register-payment']");
+        const btn = e.target.closest("button[data-action]");
         if (!btn || !isCaptain || !state) return;
 
+        const action = btn.dataset.action;
         const fineId = btn.dataset.id;
-        const fine = state.fines.find((f) => f.id === fineId);
-        if (!fine) return;
+        const fineIndex = state.fines.findIndex((f) => f.id === fineId);
+        if (fineIndex === -1) return;
+        const fine = state.fines[fineIndex];
 
-        const paidSoFar = typeof fine.paidPortion === "number"
-          ? fine.paidPortion
-          : (fine.status === "paid" ? fine.amount : 0);
-        const remaining = Math.max(0, fine.amount - paidSoFar);
+        if (action === "register-payment") {
+          const paidSoFar = typeof fine.paidPortion === "number"
+            ? fine.paidPortion
+            : (fine.status === "paid" ? fine.amount : 0);
+          const remaining = Math.max(0, fine.amount - paidSoFar);
 
-        if (remaining <= 0) return;
+          if (remaining <= 0) return;
 
-        const player = getPlayerById(fine.playerId);
-        const defaultValue = remaining.toString().replace(".", ",");
+          const player = getPlayerById(fine.playerId);
+          const defaultValue = remaining.toString().replace(".", ",");
 
-        const input = prompt(
-          `¿Cuánto ha pagado${player ? " " + player.name : ""}? Pendiente: ${formatEuro(remaining)}`,
-          defaultValue
-        );
-        if (input === null) return;
+          const input = prompt(
+            `¿Cuánto ha pagado${player ? " " + player.name : ""}? Pendiente: ${formatEuro(remaining)}`,
+            defaultValue
+          );
+          if (input === null) return;
 
-        const normalized = input.replace(",", ".");
-        const amountPaid = parseFloat(normalized);
-        if (!amountPaid || amountPaid <= 0 || amountPaid > remaining) {
-          alert("Cantidad no válida. Debe ser mayor que 0 y no puede superar lo pendiente.");
-          return;
+          const normalized = input.replace(",", ".");
+          const amountPaid = parseFloat(normalized);
+          if (!amountPaid || amountPaid <= 0 || amountPaid > remaining) {
+            alert("Cantidad no válida. Debe ser mayor que 0 y no puede superar lo pendiente.");
+            return;
+          }
+
+          const newPaid = paidSoFar + amountPaid;
+          fine.paidPortion = newPaid;
+
+          if (newPaid >= fine.amount - 0.001) {
+            fine.status = "paid";
+            fine.paidAt = new Date().toISOString();
+          } else {
+            fine.status = "pending";
+            fine.paidAt = null;
+          }
+
+          saveLocalBackup();
+          pushStateToRemote();
+          renderAll();
+        } else if (action === "delete-fine") {
+          const player = getPlayerById(fine.playerId);
+          const confirmMsg = `¿Seguro que quieres eliminar esta multa de${player ? " " + player.name : ""}?\n` +
+            `Descripción: ${fine.description}\n` +
+            `Importe total: ${formatEuro(fine.amount)}`;
+          const ok = confirm(confirmMsg);
+          if (!ok) return;
+
+          state.fines.splice(fineIndex, 1);
+          saveLocalBackup();
+          pushStateToRemote();
+          renderAll();
         }
-
-        const newPaid = paidSoFar + amountPaid;
-        fine.paidPortion = newPaid;
-
-        if (newPaid >= fine.amount - 0.001) {
-          fine.status = "paid";
-          fine.paidAt = new Date().toISOString();
-        } else {
-          fine.status = "pending";
-          fine.paidAt = null;
-        }
-
-        saveLocalBackup();
-        pushStateToRemote();
-        renderAll();
       });
 
       if (resetButton) {
