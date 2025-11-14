@@ -1,40 +1,1461 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rayo Multas</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <title>Rayo Vallecano – Multas de equipo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --rayo-red: #dc2626;
+      --rayo-red-dark: #b91c1c;
+      --rayo-red-soft: #fee2e2;
+      --rayo-red-border: #fecaca;
+      --bg-body: #f3f4f6;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2.5rem;
+    }
+
+    header {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      padding: 0.75rem 0.8rem;
+      border-radius: 16px;
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: linear-gradient(
+        135deg,
+        transparent 0,
+        transparent 42%,
+        rgba(248, 250, 252, 0.08) 43%,
+        rgba(248, 250, 252, 0.8) 46%,
+        rgba(248, 250, 252, 0.9) 49%,
+        rgba(248, 250, 252, 0.1) 52%,
+        transparent 55%,
+        transparent 100%
+      );
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    header > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: 1.7rem;
+      margin: 0;
+    }
+
+    header p {
+      margin: 0;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 260px 1.4fr 1.3fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 950px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 1rem 1.1rem 1.2rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+      border: 1px solid #e5e7eb;
+    }
+
+    .card h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card h3 {
+      margin: 0.2rem 0 0.75rem;
+      font-size: 1rem;
+    }
+
+    .pill {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--rayo-red-dark);
+      background: var(--rayo-red-soft);
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--rayo-red-border);
+    }
+
+    .players-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .players-header span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .players-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.3rem 0 0.9rem;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .player-item {
+      padding: 0.35rem 0.55rem;
+      border-radius: 999px;
+      margin-bottom: 0.15rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.12s ease, transform 0.05s ease;
+    }
+
+    .player-item:hover {
+      background: #fee2e2;
+      transform: translateX(1px);
+    }
+
+    .player-item.selected {
+      background: var(--rayo-red-dark);
+      color: #fef2f2;
+      font-weight: 600;
+    }
+
+    .player-item .initial {
+      font-size: 0.72rem;
+      background: rgba(248, 250, 252, 0.16);
+      border-radius: 999px;
+      padding: 0.05rem 0.45rem;
+    }
+
+    .group-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin: 0.45rem 0 0.15rem;
+      padding: 0 0.2rem;
+    }
+
+    .players-empty {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      padding: 0.4rem 0;
+    }
+
+    .add-player-form {
+      border-top: 1px dashed #e5e7eb;
+      padding-top: 0.55rem;
+      margin-top: 0.3rem;
+    }
+
+    .add-player-row {
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.12s ease, box-shadow 0.12s ease, background 0.12s;
+      background: #f9fafb;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--rayo-red);
+      box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.35);
+      background: #ffffff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 55px;
+      max-height: 120px;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 0.55rem;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 0.55rem;
+    }
+
+    .subtle-text {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      padding: 0.38rem 0.7rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: transform 0.06s ease, box-shadow 0.12s ease,
+        background 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--rayo-red);
+      color: #fef2f2;
+      box-shadow: 0 8px 18px rgba(220, 38, 38, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--rayo-red-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(220, 38, 38, 0.28);
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .btn-small {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.78rem;
+      box-shadow: none;
+    }
+
+    .btn-small.btn-primary {
+      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .btn[disabled],
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .panel-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .inline-stat {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      color: #4b5563;
+    }
+
+    .inline-stat strong {
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .fine-total-preview {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #1f2937;
+    }
+
+    .fine-total-preview span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-left: 0.15rem;
+    }
+
+    .custom-fine-grid {
+      display: none;
+      grid-template-columns: 2fr 1fr;
+      gap: 0.55rem;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .custom-fine-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .jackpot-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 0.55rem;
+      margin-bottom: 0.8rem;
+    }
+
+    @media (max-width: 600px) {
+      .jackpot-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-card {
+      border-radius: 10px;
+      padding: 0.5rem 0.7rem;
+      background: var(--rayo-red-soft);
+      border: 1px solid var(--rayo-red-border);
+    }
+
+    .stat-card.secondary {
+      background: #f9fafb;
+      border-color: #e5e7eb;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.1rem;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .stat-sub {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      margin-top: 0.1rem;
+    }
+
+    .player-summary-line {
+      font-size: 0.85rem;
+      color: #4b5563;
+      margin-bottom: 0.2rem;
+    }
+
+    .player-summary-line strong {
+      color: var(--text-main);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.1rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .badge-success {
+      color: #166534;
+      background: #ecfdf3;
+      border-color: #bbf7d0;
+    }
+
+    .badge-warning {
+      color: #92400e;
+      background: #fffbeb;
+      border-color: #fed7aa;
+    }
+
+    .badge-neutral {
+      color: #6b7280;
+      background: #f9fafb;
+      border-color: #e5e7eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      z-index: 1;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.4rem 0.3rem;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: middle;
+    }
+
+    th {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    tbody tr:hover {
+      background: #fee2e2;
+    }
+
+    .table-scroll {
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .muted {
+      color: #9ca3af;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.58);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal {
+      background: #ffffff;
+      padding: 1.4rem 1.6rem 1.2rem;
+      border-radius: 16px;
+      max-width: 360px;
+      width: 90%;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.45);
+      border: 1px solid var(--rayo-red-border);
+    }
+
+    .modal h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .modal p {
+      margin: 0.2rem 0 0.5rem;
+      font-size: 0.88rem;
+      color: #4b5563;
+    }
+
+    .modal input[type="password"] {
+      margin-top: 0.3rem;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Rayo Multas</h1>
-            <p>Manage your data efficiently</p>
-        </header>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Multas Rayo Vallecano</h1>
+        <p>Registrar multas, pagos y bote total del equipo.</p>
+      </div>
+      <div class="pill" id="modeBadge">Modo lectura</div>
+    </header>
 
-        <main>
-            <section class="input-section">
-                <h2>Add New Record</h2>
-                <form id="dataForm">
-                    <input type="text" id="nameInput" placeholder="Enter name" required>
-                    <input type="text" id="descInput" placeholder="Enter description" required>
-                    <button type="submit">Add Record</button>
-                </form>
-            </section>
+    <div class="grid">
+      <section class="card">
+        <div class="players-header">
+          <h2>Equipo</h2>
+          <span>
+            <span id="playersCountPlayers">0</span> jugadoras ·
+            <span id="playersCountStaff">0</span> cuerpo técnico
+          </span>
+        </div>
 
-            <section class="display-section">
-                <h2>Records</h2>
-                <div id="recordsList" class="records-list">
-                    <p>Loading records...</p>
-                </div>
-            </section>
-        </main>
+        <ul id="playersList" class="players-list"></ul>
+        <div id="playersEmpty" class="players-empty" style="display: none;">
+          Añade personas para empezar a registrar multas.
+        </div>
+
+        <form id="addPlayerForm" class="add-player-form">
+          <label for="newPlayerName">Añadir nueva persona</label>
+          <div class="add-player-row">
+            <input
+              type="text"
+              id="newPlayerName"
+              placeholder="Nombre o apodo"
+              autocomplete="off"
+            />
+            <select id="newPlayerRole">
+              <option value="player">Jugadora</option>
+              <option value="staff">Cuerpo técnico</option>
+            </select>
+            <button type="submit" class="btn btn-secondary btn-small">
+              + Añadir
+            </button>
+          </div>
+          <p class="subtle-text">
+            Si cambian nombres, puedes borrar y volver a añadir con el rol correcto.
+          </p>
+        </form>
+      </section>
+
+      <section class="card" id="assignCard">
+        <h2>
+          <span>Registrar nueva multa</span>
+          <span style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="pill">Gestión</span>
+          </span>
+        </h2>
+        <p class="panel-note">
+          Elige persona, tipo de multa y marca como pagada cuando entregue el
+          dinero. El bote se actualiza solo.
+          <br />
+          <span id="modeExplain" class="subtle-text"></span>
+        </p>
+
+        <form id="assignFineForm">
+          <div class="field">
+            <label for="playerSelect">Persona</label>
+            <select id="playerSelect"></select>
+          </div>
+
+          <div class="field">
+            <label for="fineSelect">Tipo de multa</label>
+            <select id="fineSelect"></select>
+            <p class="subtle-text">
+              Para “Otra” puedes escribir el motivo y el precio que queráis
+              poner.
+            </p>
+          </div>
+
+          <div class="field-row">
+            <div class="field" style="flex: 0.7;">
+              <label for="quantity">Cantidad / nº de prendas</label>
+              <input
+                type="number"
+                id="quantity"
+                value="1"
+                min="1"
+                step="1"
+              />
+            </div>
+            <div class="field" style="flex: 1;">
+              <label>&nbsp;</label>
+              <div class="fine-total-preview">
+                <span id="fineTotalPreview">0,00 €</span>
+                <span>importe total</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="customFineFields" class="custom-fine-grid">
+            <div class="field">
+              <label for="customFineText">Motivo de la multa (otra)</label>
+              <textarea
+                id="customFineText"
+                placeholder="Ej: Llegar tarde a la cena de equipo"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label for="customFineAmount">Precio base (€)</label>
+              <input
+                type="number"
+                id="customFineAmount"
+                placeholder="€"
+                min="0"
+                step="0.5"
+              />
+              <p class="subtle-text">
+                Se multiplicará por la cantidad / nº de prendas.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-top: 0.6rem;
+            "
+          >
+            <span class="inline-stat">
+              Pendiente actual de
+              <strong id="inlinePlayerPending">0,00 €</strong>
+            </span>
+            <button type="submit" class="btn btn-primary">
+              Guardar multa
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>
+          <span>Bote & resumen</span>
+          <span style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="pill">Estado</span>
+            <button id="resetButton" class="btn btn-secondary btn-small">
+              Reset temporada
+            </button>
+          </span>
+        </h2>
+
+        <div class="jackpot-grid">
+          <div class="stat-card">
+            <div class="stat-label">Bote total</div>
+            <div class="stat-value" id="jackpotAmount">0,00 €</div>
+            <div class="stat-sub">
+              Suma de todas las multas ya pagadas.
+            </div>
+          </div>
+          <div class="stat-card secondary">
+            <div class="stat-label">Pendiente global</div>
+            <div class="stat-value" id="totalPendingAmount">0,00 €</div>
+            <div class="stat-sub">
+              Multas registradas pero aún sin pagar.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+          <div class="player-summary-line">
+            Persona actual:
+            <strong id="currentPlayerName">–</strong>
+          </div>
+          <div class="player-summary-line">
+            Pendiente:
+            <strong id="playerPendingAmount">0,00 €</strong>
+            &nbsp;&nbsp;
+            <span class="badge badge-warning">Debe</span>
+          </div>
+          <div class="player-summary-line">
+            Ya aportado al bote:
+            <strong id="playerPaidAmount">0,00 €</strong>
+          </div>
+        </div>
+
+        <h3>Multas de la persona</h3>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th>Importe</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="finesTableBody">
+              <tr>
+                <td colspan="4" class="muted">
+                  No hay multas registradas todavía.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="subtle-text" style="margin-top: 0.5rem;">
+          Al marcar una multa como pagada, su importe pasa automáticamente al
+          bote total.
+        </p>
+      </section>
     </div>
+  </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+  <div id="captainModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Acceso al panel de multas</h2>
+      <p>
+        Solo la capitana puede registrar o cobrar multas. El resto del equipo
+        puede entrar en modo lectura.
+      </p>
+      <label for="captainPassword">Contraseña de capitana</label>
+      <input type="password" id="captainPassword" placeholder="••••••••" />
+      <div class="modal-buttons">
+        <button id="readOnlyButton" class="btn btn-secondary btn-small">
+          Modo lectura
+        </button>
+        <button id="captainLoginButton" class="btn btn-primary btn-small">
+          Entrar como capitana
+        </button>
+      </div>
+      <p class="subtle-text">
+        Modo lectura: se pueden ver multas y bote, pero no modificarlos.
+      </p>
+    </div>
+  </div>
+
+  <!-- Firebase compat scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const CAPTAIN_PASSWORD = "Rayo2025";
+      let isCaptain = false;
+      let db = null;
+      const DB_PATH = "rayoFines/globalState";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCQj4MH4qbajc-JKQFsKQa-BTgPwDYQZsM",
+        authDomain: "rayo-multas.firebaseapp.com",
+        databaseURL: "https://rayo-multas-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "rayo-multas",
+        storageBucket: "rayo-multas.firebasestorage.app",
+        messagingSenderId: "622733996982",
+        appId: "1:622733996982:web:a9a2ef3a9fc1a2a26c0717",
+        measurementId: "G-5EY5KWP683"
+      };
+
+      const defaultPeopleRaw = [
+        { name: "Luis", role: "staff" },
+        { name: "Oscar", role: "staff" },
+        { name: "Alfonso", role: "staff" },
+        { name: "Aza", role: "staff" },
+        { name: "Angela", role: "staff" },
+        { name: "Raul", role: "staff" },
+        { name: "Sori", role: "staff" },
+        { name: "Julio", role: "staff" },
+        { name: "Recarte", role: "player" },
+        { name: "Ayaka", role: "player" },
+        { name: "Burda", role: "player" },
+        { name: "Josemi", role: "player" },
+        { name: "DeMurga", role: "player" },
+        { name: "Aguado", role: "player" },
+        { name: "Mery", role: "player" },
+        { name: "Paula", role: "player" },
+        { name: "Moni", role: "player" },
+        { name: "Candela", role: "player" },
+        { name: "Rachel", role: "player" },
+        { name: "Teresa", role: "player" },
+        { name: "Edurne", role: "player" },
+        { name: "Rocio", role: "player" },
+        { name: "Rosario", role: "player" },
+        { name: "Irene", role: "player" },
+        { name: "Ibañez", role: "player" },
+        { name: "Lina", role: "player" },
+      ];
+
+      const defaultState = {
+        players: defaultPeopleRaw.map((p, idx) => ({
+          id: "p" + (idx + 1),
+          name: p.name,
+          role: p.role,
+        })),
+        fines: [],
+      };
+
+      const finesCatalog = [
+        { id: "no_preparado_entreno", label: "No estar preparado a la hora del entrenamiento", amount: 4 },
+        { id: "tarde_entreno_sin_aviso", label: "Llegar tarde al entrenamiento sin justificar o sin avisar", amount: 4 },
+        { id: "no_venir_entreno_sin_aviso", label: "No venir a entrenar sin avisar", amount: 10 },
+        { id: "no_valoracion_360", label: "No poner la valoración subjetiva del entreno en 360", amount: 1 },
+        { id: "mucho_fisio_no_subir", label: "Quedarse demasiado en el fisio sin subir a entrenar", amount: 1 },
+        { id: "cita_fisio_no_ir", label: "Tener cita con el fisio y no ir", amount: 5 },
+        { id: "tarde_convocatoria_avisando", label: "Llegar tarde a la convocatoria avisando (5 minutos de cortesía)", amount: 5 },
+        { id: "tarde_convocatoria_sin_aviso", label: "Llegar tarde a la convocatoria sin avisar o sin justificar", amount: 10 },
+        { id: "no_ir_partido_sin_justificacion", label: "No acudir a un partido convocada sin justificación", amount: 15 },
+        { id: "perder_partido_oficial", label: "Perderse un partido oficial (justificado o no, excepto lesión/causa mayor)", amount: 10 },
+        { id: "no_ir_partido_casa_lesionadas_desconvocadas", label: "En casa, obligatorio ir a los partidos (lesionadas/desconvocadas)", amount: 15 },
+        { id: "amarilla_protestar", label: "Tarjeta amarilla por protestar", amount: 5 },
+        { id: "roja_protestar", label: "Tarjeta roja por protestar", amount: 15 },
+        { id: "ropa_salida_incorrecta", label: "Salir con ropa de partido o de otro club (obligatorio ropa de calle o chándal del club)", amount: 5 },
+        { id: "no_ducha_viaje", label: "No ducharse en partidos de fuera/viajes (obligatorio)", amount: 5 },
+        { id: "no_uniformada_entreno_partido", label: "No ir bien uniformada en entrenamiento/partidos (€/prenda)", amount: 1 },
+        { id: "joyas", label: "Llevar pendientes, collares, pulseras, relojes (€/prenda)", amount: 1 },
+        { id: "indumentaria_incorrecta_viaje", label: "Indumentaria incorrecta en viajes", amount: 2 },
+        { id: "bajar_bus_ropa_inadecuada", label: "Bajar del autobús con ropa del club inadecuada", amount: 2 },
+        { id: "no_top_gps_entreno", label: "No traer el top del GPS al entreno", amount: 10 },
+        { id: "no_top_gps_partido", label: "No traer el top del GPS al partido", amount: 12 },
+        { id: "llevarse_gps_entreno", label: "Llevarse GPS del entreno", amount: 10 },
+        { id: "llevarse_gps_partido", label: "Llevarse GPS de los partidos", amount: 12 },
+        { id: "llevarse_peto", label: "Llevarse peto sin justificación", amount: 2 },
+        { id: "no_recoger_material", label: "No recoger material cuando corresponde", amount: 3 },
+      ];
+
+      function cloneDefaultState() {
+        return JSON.parse(JSON.stringify(defaultState));
+      }
+
+      function formatEuro(value) {
+        const num = Number(value) || 0;
+        return num.toFixed(2).replace(".", ",") + " €";
+      }
+
+      let state = null;
+      let selectedPlayerId = null;
+
+      const playersListEl = document.getElementById("playersList");
+      const playersEmptyEl = document.getElementById("playersEmpty");
+      const playersCountPlayersEl = document.getElementById("playersCountPlayers");
+      const playersCountStaffEl = document.getElementById("playersCountStaff");
+      const addPlayerForm = document.getElementById("addPlayerForm");
+      const newPlayerNameInput = document.getElementById("newPlayerName");
+      const newPlayerRoleSelect = document.getElementById("newPlayerRole");
+
+      const playerSelectEl = document.getElementById("playerSelect");
+      const fineSelectEl = document.getElementById("fineSelect");
+      const quantityInput = document.getElementById("quantity");
+      const fineTotalPreviewEl = document.getElementById("fineTotalPreview");
+      const customFineFieldsEl = document.getElementById("customFineFields");
+      const customFineTextEl = document.getElementById("customFineText");
+      const customFineAmountEl = document.getElementById("customFineAmount");
+      const assignFineForm = document.getElementById("assignFineForm");
+      const inlinePlayerPendingEl = document.getElementById("inlinePlayerPending");
+
+      const jackpotAmountEl = document.getElementById("jackpotAmount");
+      const totalPendingAmountEl = document.getElementById("totalPendingAmount");
+      const currentPlayerNameEl = document.getElementById("currentPlayerName");
+      const playerPendingAmountEl = document.getElementById("playerPendingAmount");
+      const playerPaidAmountEl = document.getElementById("playerPaidAmount");
+      const finesTableBodyEl = document.getElementById("finesTableBody");
+
+      const modeBadgeEl = document.getElementById("modeBadge");
+      const modeExplainEl = document.getElementById("modeExplain");
+      const assignCardEl = document.getElementById("assignCard");
+      const resetButton = document.getElementById("resetButton");
+
+      const captainModal = document.getElementById("captainModal");
+      const captainPasswordInput = document.getElementById("captainPassword");
+      const captainLoginButton = document.getElementById("captainLoginButton");
+      const readOnlyButton = document.getElementById("readOnlyButton");
+
+      function saveLocalBackup() {
+        if (!state) return;
+        try {
+          localStorage.setItem("rayoFinesBackup", JSON.stringify(state));
+        } catch (e) {
+          console.warn("No se pudo guardar copia local:", e);
+        }
+      }
+
+      function initLocalFromBackup() {
+        try {
+          const backup = localStorage.getItem("rayoFinesBackup");
+          if (backup) {
+            const parsed = JSON.parse(backup);
+            if (Array.isArray(parsed.players)) {
+              state = parsed;
+              if (!Array.isArray(state.fines)) state.fines = [];
+              state.players.forEach((p) => {
+                if (!p.role) p.role = "player";
+              });
+            } else {
+              state = cloneDefaultState();
+            }
+          } else {
+            state = cloneDefaultState();
+          }
+        } catch (e) {
+          console.error("Error leyendo copia local:", e);
+          state = cloneDefaultState();
+        }
+        if (!selectedPlayerId && state.players.length) {
+          selectedPlayerId = state.players[0].id;
+        }
+        renderAll();
+      }
+
+      function pushStateToRemote() {
+        if (!db || !state) return;
+        db.ref(DB_PATH).set(state).catch((err) => {
+          console.error("Error guardando en Firebase:", err);
+        });
+      }
+
+      function initFirebase() {
+        try {
+          firebase.initializeApp(firebaseConfig);
+          db = firebase.database();
+
+          const ref = db.ref(DB_PATH);
+          ref.on(
+            "value",
+            (snapshot) => {
+              const data = snapshot.val();
+              if (data && Array.isArray(data.players)) {
+                state = data;
+                if (!Array.isArray(state.fines)) state.fines = [];
+                state.players.forEach((p) => {
+                  if (!p.role) p.role = "player";
+                });
+              } else {
+                state = cloneDefaultState();
+                pushStateToRemote();
+              }
+              if (!selectedPlayerId && state.players.length) {
+                selectedPlayerId = state.players[0].id;
+              }
+              saveLocalBackup();
+              renderAll();
+            },
+            (error) => {
+              console.error("Error leyendo Firebase:", error);
+              initLocalFromBackup();
+            }
+          );
+        } catch (e) {
+          console.error("Error iniciando Firebase:", e);
+          initLocalFromBackup();
+        }
+      }
+
+      function renderFineOptions() {
+        fineSelectEl.innerHTML = "";
+        finesCatalog.forEach((fine) => {
+          const opt = document.createElement("option");
+          const suffix =
+            fine.amount === 1 && fine.label.includes("€/prenda")
+              ? " (1 €/prenda)"
+              : ` (${fine.amount} €)`;
+          opt.value = fine.id;
+          opt.textContent = fine.label + suffix;
+          fineSelectEl.appendChild(opt);
+        });
+        const customOpt = document.createElement("option");
+        customOpt.value = "custom";
+        customOpt.textContent = "Otra (especificar)";
+        fineSelectEl.appendChild(customOpt);
+
+        fineSelectEl.value = finesCatalog[0].id;
+      }
+
+      function renderPlayers() {
+        if (!state) return;
+        playersListEl.innerHTML = "";
+
+        const staff = state.players.filter((p) => p.role === "staff");
+        const players = state.players.filter((p) => p.role === "player");
+
+        playersCountPlayersEl.textContent = players.length;
+        playersCountStaffEl.textContent = staff.length;
+
+        playersEmptyEl.style.display = state.players.length === 0 ? "block" : "none";
+
+        const all = players.length ? players.concat(staff) : staff.slice();
+
+        if (!selectedPlayerId || !all.some((p) => p.id === selectedPlayerId)) {
+          selectedPlayerId = all.length ? all[0].id : null;
+        }
+
+        function addListItem(person) {
+          const li = document.createElement("li");
+          li.className = "player-item";
+          if (person.id === selectedPlayerId) {
+            li.classList.add("selected");
+          }
+          const spanName = document.createElement("span");
+          spanName.textContent = person.name;
+
+          const spanInit = document.createElement("span");
+          spanInit.className = "initial";
+          spanInit.textContent = person.name.trim().charAt(0).toUpperCase() || "?";
+
+          li.appendChild(spanName);
+          li.appendChild(spanInit);
+
+          li.addEventListener("click", () => {
+            selectedPlayerId = person.id;
+            playerSelectEl.value = selectedPlayerId;
+            renderAll();
+          });
+
+          playersListEl.appendChild(li);
+        }
+
+        if (staff.length) {
+          const gl = document.createElement("div");
+          gl.className = "group-label";
+          gl.textContent = "Cuerpo técnico";
+          playersListEl.appendChild(gl);
+          staff.forEach(addListItem);
+        }
+
+        if (players.length) {
+          const gl = document.createElement("div");
+          gl.className = "group-label";
+          gl.textContent = "Jugadoras";
+          playersListEl.appendChild(gl);
+          players.forEach(addListItem);
+        }
+
+        playerSelectEl.innerHTML = "";
+        if (players.length) {
+          const ogPlayers = document.createElement("optgroup");
+          ogPlayers.label = "Jugadoras";
+          players.forEach((person) => {
+            const opt = document.createElement("option");
+            opt.value = person.id;
+            opt.textContent = person.name;
+            ogPlayers.appendChild(opt);
+          });
+          playerSelectEl.appendChild(ogPlayers);
+        }
+        if (staff.length) {
+          const ogStaff = document.createElement("optgroup");
+          ogStaff.label = "Cuerpo técnico";
+          staff.forEach((person) => {
+            const opt = document.createElement("option");
+            opt.value = person.id;
+            opt.textContent = person.name;
+            ogStaff.appendChild(opt);
+          });
+          playerSelectEl.appendChild(ogStaff);
+        }
+
+        if (selectedPlayerId) {
+          playerSelectEl.value = selectedPlayerId;
+        }
+      }
+
+      function calcJackpotAndPending() {
+        if (!state) return { jackpot: 0, pending: 0 };
+        const jackpot = state.fines
+          .filter((f) => f.status === "paid")
+          .reduce((sum, f) => sum + f.amount, 0);
+
+        const pending = state.fines
+          .filter((f) => f.status === "pending")
+          .reduce((sum, f) => sum + f.amount, 0);
+
+        return { jackpot, pending };
+      }
+
+      function renderJackpot() {
+        const { jackpot, pending } = calcJackpotAndPending();
+        jackpotAmountEl.textContent = formatEuro(jackpot);
+        totalPendingAmountEl.textContent = formatEuro(pending);
+      }
+
+      function getPlayerById(id) {
+        if (!state) return null;
+        return state.players.find((p) => p.id === id);
+      }
+
+      function renderPlayerSummary() {
+        if (!state) return;
+        const player = getPlayerById(selectedPlayerId);
+        if (!player) {
+          currentPlayerNameEl.textContent = "–";
+          playerPendingAmountEl.textContent = formatEuro(0);
+          playerPaidAmountEl.textContent = formatEuro(0);
+          inlinePlayerPendingEl.textContent = formatEuro(0);
+          finesTableBodyEl.innerHTML =
+            '<tr><td colspan="4" class="muted">Añade personas para empezar.</td></tr>';
+          return;
+        }
+
+        currentPlayerNameEl.textContent = player.name;
+
+        const finesForPlayer = state.fines.filter((f) => f.playerId === player.id);
+
+        const pending = finesForPlayer
+          .filter((f) => f.status === "pending")
+          .reduce((sum, f) => sum + f.amount, 0);
+
+        const paid = finesForPlayer
+          .filter((f) => f.status === "paid")
+          .reduce((sum, f) => sum + f.amount, 0);
+
+        playerPendingAmountEl.textContent = formatEuro(pending);
+        playerPaidAmountEl.textContent = formatEuro(paid);
+        inlinePlayerPendingEl.textContent = formatEuro(pending);
+
+        if (finesForPlayer.length === 0) {
+          finesTableBodyEl.innerHTML =
+            '<tr><td colspan="4" class="muted">Sin multas todavía.</td></tr>';
+          return;
+        }
+
+        finesForPlayer.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        finesTableBodyEl.innerHTML = "";
+        finesForPlayer.forEach((fine) => {
+          const tr = document.createElement("tr");
+
+          const tdDesc = document.createElement("td");
+          tdDesc.textContent = fine.description;
+
+          const tdAmount = document.createElement("td");
+          tdAmount.textContent = formatEuro(fine.amount);
+
+          const tdStatus = document.createElement("td");
+          const badge = document.createElement("span");
+          if (fine.status === "paid") {
+            badge.className = "badge badge-success";
+            badge.textContent = "Pagada";
+          } else {
+            badge.className = "badge badge-warning";
+            badge.textContent = "Pendiente";
+          }
+          tdStatus.appendChild(badge);
+
+          const tdAction = document.createElement("td");
+          if (fine.status === "pending") {
+            if (isCaptain) {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "btn btn-small btn-primary";
+              btn.textContent = "Marcar pagada";
+              btn.dataset.action = "mark-paid";
+              btn.dataset.id = fine.id;
+              tdAction.appendChild(btn);
+            } else {
+              const span = document.createElement("span");
+              span.className = "badge badge-neutral";
+              span.textContent = "Solo capitana";
+              tdAction.appendChild(span);
+            }
+          } else {
+            const span = document.createElement("span");
+            span.className = "badge badge-neutral";
+            span.textContent = "OK";
+            tdAction.appendChild(span);
+          }
+
+          tr.appendChild(tdDesc);
+          tr.appendChild(tdAmount);
+          tr.appendChild(tdStatus);
+          tr.appendChild(tdAction);
+
+          finesTableBodyEl.appendChild(tr);
+        });
+      }
+
+      function updateFinePreviewAmount() {
+        const qty = parseInt(quantityInput.value, 10) || 1;
+        let total = 0;
+
+        if (fineSelectEl.value === "custom") {
+          const base =
+            parseFloat(
+              (customFineAmountEl.value || "")
+                .toString()
+                .replace(",", ".")
+            ) || 0;
+          total = base * qty;
+        } else {
+          const selectedFine = finesCatalog.find(
+            (f) => f.id === fineSelectEl.value
+          );
+          if (selectedFine) {
+            total = selectedFine.amount * qty;
+          }
+        }
+
+        fineTotalPreviewEl.textContent = formatEuro(total);
+      }
+
+      function updateModeUI() {
+        if (modeBadgeEl) {
+          modeBadgeEl.textContent = isCaptain
+            ? "Modo capitana"
+            : "Modo lectura";
+        }
+        if (modeExplainEl) {
+          modeExplainEl.textContent = isCaptain
+            ? "Estás en modo capitana: puedes registrar multas nuevas y marcar pagos."
+            : "En modo lectura solo ves los datos, no puedes cambiarlos.";
+        }
+
+        const assignBtn =
+          assignFineForm.querySelector("button[type='submit']");
+        const addBtn =
+          addPlayerForm.querySelector("button[type='submit']");
+
+        if (assignBtn) assignBtn.disabled = !isCaptain;
+        if (addBtn) addBtn.disabled = !isCaptain;
+
+        if (assignCardEl) {
+          assignCardEl.style.display = isCaptain ? "" : "none";
+        }
+        if (resetButton) {
+          resetButton.style.display = isCaptain ? "inline-flex" : "none";
+        }
+      }
+
+      function renderAll() {
+        renderPlayers();
+        renderJackpot();
+        renderPlayerSummary();
+        updateFinePreviewAmount();
+        updateModeUI();
+      }
+
+      addPlayerForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!isCaptain || !state) return;
+
+        const name = newPlayerNameInput.value.trim();
+        if (!name) return;
+
+        const role =
+          newPlayerRoleSelect.value === "staff" ? "staff" : "player";
+
+        const id =
+          "p" +
+          (Date.now().toString(36) +
+            Math.random().toString(16).slice(2));
+
+        state.players.push({ id, name, role });
+        selectedPlayerId = id;
+        newPlayerNameInput.value = "";
+        saveLocalBackup();
+        pushStateToRemote();
+        renderAll();
+      });
+
+      playerSelectEl.addEventListener("change", (e) => {
+        selectedPlayerId = e.target.value;
+        renderAll();
+      });
+
+      fineSelectEl.addEventListener("change", () => {
+        if (fineSelectEl.value === "custom") {
+          customFineFieldsEl.style.display = "grid";
+        } else {
+          customFineFieldsEl.style.display = "none";
+        }
+        updateFinePreviewAmount();
+      });
+
+      quantityInput.addEventListener("input", updateFinePreviewAmount);
+      customFineAmountEl.addEventListener("input", updateFinePreviewAmount);
+
+      assignFineForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!isCaptain || !state) return;
+        if (!selectedPlayerId) return;
+
+        const playerId = playerSelectEl.value;
+        const qty = parseInt(quantityInput.value, 10) || 1;
+
+        let description = "";
+        let amount = 0;
+
+        if (fineSelectEl.value === "custom") {
+          const desc = customFineTextEl.value.trim();
+          const base =
+            parseFloat(
+              (customFineAmountEl.value || "")
+                .toString()
+                .replace(",", ".")
+            ) || 0;
+          if (!desc || base <= 0) {
+            alert(
+              "Pon descripción y un precio base mayor que 0 para la multa 'Otra'."
+            );
+            return;
+          }
+          description = desc;
+          amount = base * qty;
+        } else {
+          const selectedFine = finesCatalog.find(
+            (f) => f.id === fineSelectEl.value
+          );
+          if (!selectedFine) return;
+          description =
+            selectedFine.label + (qty > 1 ? " x" + qty : "");
+          amount = selectedFine.amount * qty;
+        }
+
+        const fineRecord = {
+          id:
+            "f" +
+            (Date.now().toString(36) +
+              Math.random().toString(16).slice(2)),
+          playerId,
+          description,
+          amount,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          paidAt: null,
+        };
+
+        state.fines.push(fineRecord);
+        saveLocalBackup();
+        pushStateToRemote();
+
+        assignFineForm.reset();
+        fineSelectEl.value = finesCatalog[0].id;
+        quantityInput.value = "1";
+        customFineFieldsEl.style.display = "none";
+        updateFinePreviewAmount();
+        renderAll();
+      });
+
+      finesTableBodyEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-action='mark-paid']");
+        if (!btn || !isCaptain || !state) return;
+
+        const fineId = btn.dataset.id;
+        const fine = state.fines.find((f) => f.id === fineId);
+        if (!fine || fine.status === "paid") return;
+
+        const ok = confirm(
+          "¿Marcar esta multa como pagada y añadirla al bote?"
+        );
+        if (!ok) return;
+
+        fine.status = "paid";
+        fine.paidAt = new Date().toISOString();
+        saveLocalBackup();
+        pushStateToRemote();
+        renderAll();
+      });
+
+      if (resetButton) {
+        resetButton.addEventListener("click", () => {
+          if (!isCaptain || !state) return;
+          const ok = confirm(
+            "¿Seguro que quieres borrar todas las multas y reiniciar el bote para una nueva temporada? Esto no se puede deshacer."
+          );
+          if (!ok) return;
+          state.fines = [];
+          saveLocalBackup();
+          pushStateToRemote();
+          renderAll();
+        });
+      }
+
+      function attemptCaptainLogin() {
+        const entered = captainPasswordInput.value.trim();
+        if (entered === CAPTAIN_PASSWORD) {
+          isCaptain = true;
+          captainModal.style.display = "none";
+          updateModeUI();
+          renderAll();
+        } else {
+          alert("Contraseña incorrecta");
+          captainPasswordInput.value = "";
+          captainPasswordInput.focus();
+        }
+      }
+
+      captainLoginButton.addEventListener("click", () => {
+        attemptCaptainLogin();
+      });
+
+      captainPasswordInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          attemptCaptainLogin();
+        }
+      });
+
+      readOnlyButton.addEventListener("click", () => {
+        isCaptain = false;
+        captainModal.style.display = "none";
+        updateModeUI();
+        renderAll();
+      });
+
+      renderFineOptions();
+      initFirebase();
+      setTimeout(() => {
+        captainPasswordInput.focus();
+      }, 150);
+    });
+  </script>
 </body>
 </html>
