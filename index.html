@@ -559,6 +559,7 @@
     </header>
 
     <div class="grid">
+      <!-- Equipo -->
       <section class="card">
         <div class="players-header">
           <h2>Equipo</h2>
@@ -596,6 +597,7 @@
         </form>
       </section>
 
+      <!-- Registrar multa (solo capitana) -->
       <section class="card" id="assignCard">
         <h2>
           <span>Registrar nueva multa</span>
@@ -604,7 +606,7 @@
           </span>
         </h2>
         <p class="panel-note">
-          Elige persona, tipo de multa y marca como pagada cuando entregue el
+          Elige persona, tipo de multa y marca pagos (totales o parciales) cuando entregue el
           dinero. El bote se actualiza solo.
           <br />
           <span id="modeExplain" class="subtle-text"></span>
@@ -687,6 +689,7 @@
         </form>
       </section>
 
+      <!-- Bote & resumen -->
       <section class="card">
         <h2>
           <span>Bote & resumen</span>
@@ -703,14 +706,14 @@
             <div class="stat-label">Bote total</div>
             <div class="stat-value" id="jackpotAmount">0,00 €</div>
             <div class="stat-sub">
-              Suma de todas las multas ya pagadas.
+              Suma de todo lo pagado (incluidos pagos parciales).
             </div>
           </div>
           <div class="stat-card secondary">
             <div class="stat-label">Pendiente global</div>
             <div class="stat-value" id="totalPendingAmount">0,00 €</div>
             <div class="stat-sub">
-              Multas registradas pero aún sin pagar.
+              Importe que aún falta por pagar.
             </div>
           </div>
         </div>
@@ -753,13 +756,13 @@
           </table>
         </div>
         <p class="subtle-text" style="margin-top: 0.5rem;">
-          Al marcar una multa como pagada, su importe pasa automáticamente al
-          bote total.
+          Puedes registrar pagos parciales. Cuando una multa quede a 0 €, pasa a "Pagada" y todo lo pagado se suma al bote.
         </p>
       </section>
     </div>
   </div>
 
+  <!-- Modal capitana -->
   <div id="captainModal" class="modal-backdrop">
     <div class="modal">
       <h2>Acceso al panel de multas</h2>
@@ -938,6 +941,11 @@
               state.players.forEach((p) => {
                 if (!p.role) p.role = "player";
               });
+              state.fines.forEach((f) => {
+                if (typeof f.paidPortion !== "number") {
+                  f.paidPortion = f.status === "paid" ? f.amount : 0;
+                }
+              });
             } else {
               state = cloneDefaultState();
             }
@@ -978,15 +986,10 @@
                   if (!p.role) p.role = "player";
                 });
                 state.fines.forEach((f) => {
-                    if (typeof f.paidPortion !== "number") {
-                        // multas antiguas sin este campo
-                        f.paidPortion = f.status === "paid" ? f.amount : 0;
-    }
-  });
-} else {
-  state = cloneDefaultState();
-  pushStateToRemote();
-}
+                  if (typeof f.paidPortion !== "number") {
+                    f.paidPortion = f.status === "paid" ? f.amount : 0;
+                  }
+                });
               } else {
                 state = cloneDefaultState();
                 pushStateToRemote();
@@ -1118,13 +1121,19 @@
 
       function calcJackpotAndPending() {
         if (!state) return { jackpot: 0, pending: 0 };
-        const jackpot = state.fines
-          .filter((f) => f.status === "paid")
-          .reduce((sum, f) => sum + f.amount, 0);
 
-        const pending = state.fines
-          .filter((f) => f.status === "pending")
-          .reduce((sum, f) => sum + f.amount, 0);
+        let jackpot = 0;
+        let pending = 0;
+
+        state.fines.forEach((f) => {
+          const paid = typeof f.paidPortion === "number"
+            ? f.paidPortion
+            : (f.status === "paid" ? f.amount : 0);
+          const remaining = Math.max(0, f.amount - paid);
+
+          jackpot += paid;
+          pending += remaining;
+        });
 
         return { jackpot, pending };
       }
@@ -1157,13 +1166,18 @@
 
         const finesForPlayer = state.fines.filter((f) => f.playerId === player.id);
 
-        const pending = finesForPlayer
-          .filter((f) => f.status === "pending")
-          .reduce((sum, f) => sum + f.amount, 0);
+        let pending = 0;
+        let paid = 0;
 
-        const paid = finesForPlayer
-          .filter((f) => f.status === "paid")
-          .reduce((sum, f) => sum + f.amount, 0);
+        finesForPlayer.forEach((f) => {
+          const paidPart = typeof f.paidPortion === "number"
+            ? f.paidPortion
+            : (f.status === "paid" ? f.amount : 0);
+          const remaining = Math.max(0, f.amount - paidPart);
+
+          paid += paidPart;
+          pending += remaining;
+        });
 
         playerPendingAmountEl.textContent = formatEuro(pending);
         playerPaidAmountEl.textContent = formatEuro(paid);
@@ -1191,23 +1205,32 @@
 
           const tdStatus = document.createElement("td");
           const badge = document.createElement("span");
-          if (fine.status === "paid") {
+
+          const paidPart = typeof fine.paidPortion === "number"
+            ? fine.paidPortion
+            : (fine.status === "paid" ? fine.amount : 0);
+          const remaining = Math.max(0, fine.amount - paidPart);
+
+          if (remaining === 0) {
             badge.className = "badge badge-success";
             badge.textContent = "Pagada";
+          } else if (paidPart > 0) {
+            badge.className = "badge badge-warning";
+            badge.textContent = "Parcial (debe " + formatEuro(remaining) + ")";
           } else {
             badge.className = "badge badge-warning";
-            badge.textContent = "Pendiente";
+            badge.textContent = "Pendiente (" + formatEuro(remaining) + ")";
           }
           tdStatus.appendChild(badge);
 
           const tdAction = document.createElement("td");
-          if (fine.status === "pending") {
+          if (remaining > 0) {
             if (isCaptain) {
               const btn = document.createElement("button");
               btn.type = "button";
               btn.className = "btn btn-small btn-primary";
-              btn.textContent = "Marcar pagada";
-              btn.dataset.action = "mark-paid";
+              btn.textContent = "Registrar pago";
+              btn.dataset.action = "register-payment";
               btn.dataset.id = fine.id;
               tdAction.appendChild(btn);
             } else {
@@ -1380,7 +1403,7 @@
           status: "pending",
           createdAt: new Date().toISOString(),
           paidAt: null,
-          paidPortion: 0 // Cantidad ya pagada 
+          paidPortion: 0
         };
 
         state.fines.push(fineRecord);
@@ -1396,20 +1419,47 @@
       });
 
       finesTableBodyEl.addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-action='mark-paid']");
+        const btn = e.target.closest("button[data-action='register-payment']");
         if (!btn || !isCaptain || !state) return;
 
         const fineId = btn.dataset.id;
         const fine = state.fines.find((f) => f.id === fineId);
-        if (!fine || fine.status === "paid") return;
+        if (!fine) return;
 
-        const ok = confirm(
-          "¿Marcar esta multa como pagada y añadirla al bote?"
+        const paidSoFar = typeof fine.paidPortion === "number"
+          ? fine.paidPortion
+          : (fine.status === "paid" ? fine.amount : 0);
+        const remaining = Math.max(0, fine.amount - paidSoFar);
+
+        if (remaining <= 0) return;
+
+        const player = getPlayerById(fine.playerId);
+        const defaultValue = remaining.toString().replace(".", ",");
+
+        const input = prompt(
+          `¿Cuánto ha pagado${player ? " " + player.name : ""}? Pendiente: ${formatEuro(remaining)}`,
+          defaultValue
         );
-        if (!ok) return;
+        if (input === null) return;
 
-        fine.status = "paid";
-        fine.paidAt = new Date().toISOString();
+        const normalized = input.replace(",", ".");
+        const amountPaid = parseFloat(normalized);
+        if (!amountPaid || amountPaid <= 0 || amountPaid > remaining) {
+          alert("Cantidad no válida. Debe ser mayor que 0 y no puede superar lo pendiente.");
+          return;
+        }
+
+        const newPaid = paidSoFar + amountPaid;
+        fine.paidPortion = newPaid;
+
+        if (newPaid >= fine.amount - 0.001) {
+          fine.status = "paid";
+          fine.paidAt = new Date().toISOString();
+        } else {
+          fine.status = "pending";
+          fine.paidAt = null;
+        }
+
         saveLocalBackup();
         pushStateToRemote();
         renderAll();
